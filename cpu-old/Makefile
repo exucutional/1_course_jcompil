@@ -1,18 +1,18 @@
-CC = g++
+CC = gcc
 ASM = nasm
-LD = g++
+LD = gcc
 SFML_DIR= C:/SFML
 LIBDIR= $(SFML_DIR)/lib
 CFLAGS =-c -g -O3 -Wall -I$(SFML_DIR)/include
 AFLAGS = -f elf64	
 LDFLAGS = -g -no-pie
 SFML = -lsfml-graphics -lsfml-window -lsfml-system 
-VPATH = ./src
+VPATH = 
 OBJPATH = ./compile
-SRCC = main.cpp jcompil.cpp cpu/cpu_asm.cpp cpu/cpu_t.cpp
-HEAD = jcompil.hpp cpu/cpu_t.h
+SRCC = cpu_run.c cpu_asm.c cpu_t.c
+HEAD = cpu_t.h
 SRCSASM = 
-OBJC = $(SRCC:%.cpp=$(OBJPATH)/%.o)
+OBJC = $(SRCC:%.c=$(OBJPATH)/%.o)
 OBJASM = $(SRCASM:.S=.o)
 EXECUTABLE_LINUX = run.out
 EXECUTABLE_WINDOWS = run.exe
@@ -32,7 +32,7 @@ $(EXECUTABLE_WINDOWS): $(OBJC)
 	@echo "LINKING:"
 	$(LD) $(LDFLAGS) $(OBJC) -o  $@ -L$(LIBDIR) $(SFML)
 
-$(OBJPATH)/%.o: %.cpp $(HEAD)
+$(OBJPATH)/%.o: %.c $(HEAD)
 	@echo "COMPILING:"
 	$(CC) $(CFLAGS) $< -o $@
 
