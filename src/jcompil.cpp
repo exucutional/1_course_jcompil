@@ -2,6 +2,7 @@
 #include "Windows.h"
 #elif (defined (LINUX) || defined (__linux__))
 #include <sys/mman.h>
+#include <limits.h>
 #endif
 #include <iostream>
 #include <cassert>
@@ -12,6 +13,9 @@
 #else
 #define __DEBUG_EXEC(code) code
 #endif
+#ifndef PAGESIZE
+#define PAGESIZE 4096
+#endif
 Jcompil::Jcompil(size_t mcap)
 {
 	#if (defined (_WIN32) || defined (_WIN64))
@@ -20,9 +24,11 @@ Jcompil::Jcompil(size_t mcap)
         assert(memory);
     #elif (defined (LINUX) || defined (__linux__))
        __DEBUG_EXEC(std::cout << "I'm on Linux!" << std::endl);
-       memory = new uint8_t[mcap];
+       memory = new uint8_t[mcap + PAGESIZE - 1];
        assert(memory);
-       mprotect(memory, mcapacity, PROT_READ | PROT_WRITE | PROT_EXEC) ;
+       memdel = memory;
+       memory = (uint8_t*)(((size_t)memory + PAGESIZE - 1) & ~(PAGESIZE - 1));
+       mprotect(memory, mcapacity + PAGESIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
     #endif
 	mcapacity = mcap;
 }
@@ -31,7 +37,7 @@ Jcompil::~Jcompil()
 	#if (defined (_WIN32) || defined (_WIN64))
    		VirtualFree(memory, mcapacity, MEM_RELEASE);
     #elif (defined (LINUX) || defined (__linux__))
-   		delete[] memory;
+   		delete[] memdel;
     #endif
 }
 int Jcompil::assembl(FILE* fin) const
