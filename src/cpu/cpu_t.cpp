@@ -26,6 +26,24 @@ static inline void cpu_cmd_##name(struct cpu_t*);
 #include "cmd_list.h"
 #undef DEF_CMD
 
+#define MOVQ(reg, val) 									\
+do {													\
+	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);	\
+	cpu_newrip_write_byte(cpu, reg + 0xb8);				\
+	cpu_newrip_write_qword(cpu, val);					\
+} while (0)
+
+#define JMP_PREPARE 									\
+do {													\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);		\
+	cpu_newrip_write_byte(cpu, 0x5a);					\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);		\
+	cpu_newrip_write_byte(cpu, 0x5b);					\
+	cpu_newrip_write_byte(cpu, 0x4d);					\
+	cpu_newrip_write_byte(cpu, 0x39);					\
+	cpu_newrip_write_byte(cpu, 0xd3);					\
+} while (0)
+
 static const int LABEL_MAX = 32;
 static struct label_t lbl[LABEL_MAX] = {0};
 
@@ -159,23 +177,16 @@ static inline uint64_t cpu_pop(struct cpu_t *cpu)
 	cpu->reg[REG_rsp] += sizeof(uint64_t);
 	return val;
 }
-
 /// Syscall handler
 int cpu_syscall(struct cpu_t *cpu)
 {
-	uint64_t tmp = 0;
 	switch (cpu->reg[REG_rax]) {
 	case SYSCALL_EXIT:
-		cpu->trap = TRAP_EXIT;
-		break;
 	case SYSCALL_OUTQ:
-		tmp = cpu_pop(cpu);
-		printf("\n%lu\n", tmp);
-		cpu_push(cpu, tmp);
-		cpu->trap = TRAP_NO_TRAP;
-		break;
 	case SYSCALL_INPQ:
-		scanf("%lu", &(cpu->reg[REG_rax]));
+		cpu_newrip_write_byte(cpu, 0x41);
+		cpu_newrip_write_byte(cpu, 0xff);
+		cpu_newrip_write_byte(cpu, 0xd4);
 		cpu->trap = TRAP_NO_TRAP;
 		break;
 	default:
@@ -247,8 +258,9 @@ static inline void cpu_cmd_nop(struct cpu_t *cpu)
 
 static inline void cpu_cmd_syscall(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_SYSCALL1);
-	cpu_newrip_write_byte(cpu, X86_64_SYSCALL2);
+	//cpu_newrip_write_byte(cpu, X86_64_SYSCALL1);
+	//cpu_newrip_write_byte(cpu, X86_64_SYSCALL2);
+	cpu->trap = TRAP_SYSCALL;
 }
 
 static inline void cpu_cmd_pushq(struct cpu_t *cpu)
@@ -333,13 +345,7 @@ static inline void cpu_cmd_div(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jmp(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JMP);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -377,9 +383,12 @@ static inline void cpu_cmd_movrr(struct cpu_t *cpu)
 
 static inline void cpu_cmd_movq(struct cpu_t *cpu)
 {
+	uint64_t temp1 = cpu_rip_byte(cpu);
+	uint64_t temp2 = cpu_rip_qword(cpu);
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xb8);
-	cpu_newrip_write_qword(cpu, cpu_rip_qword(cpu));
+	cpu_newrip_write_byte(cpu, temp1 + 0xb8);
+	cpu_newrip_write_qword(cpu, temp2);
+	cpu->reg[temp1] = temp2;
 }
 static inline void cpu_cmd_movmrr(struct cpu_t *cpu)
 {
@@ -400,13 +409,7 @@ static inline void cpu_cmd_movrmr(struct cpu_t *cpu)
 }
 static inline void cpu_cmd_jl(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JL);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -419,13 +422,7 @@ static inline void cpu_cmd_jl(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jg(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JG);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -438,13 +435,7 @@ static inline void cpu_cmd_jg(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jle(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JLE);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -457,13 +448,7 @@ static inline void cpu_cmd_jle(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jge(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JGE);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -476,13 +461,7 @@ static inline void cpu_cmd_jge(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jeq(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JE);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {
@@ -495,13 +474,7 @@ static inline void cpu_cmd_jeq(struct cpu_t *cpu)
 
 static inline void cpu_cmd_jne(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5a);
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);
-	cpu_newrip_write_byte(cpu, 0x5b);
-	cpu_newrip_write_byte(cpu, 0x4d);
-	cpu_newrip_write_byte(cpu, 0x39);
-	cpu_newrip_write_byte(cpu, 0xd3);
+	JMP_PREPARE;
 	cpu_newrip_write_byte(cpu, X86_64_JNE);
 	uint64_t tmp = cpu_rip_qword(cpu);
 	if (lbl[tmp].isdefined) {

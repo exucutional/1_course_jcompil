@@ -23,12 +23,16 @@ Jcompil::Jcompil(size_t mcap)
         memory = static_cast<uint8_t*>(VirtualAlloc(NULL, mcap, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
         assert(memory);
     #elif (defined (LINUX) || defined (__linux__))
-       __DEBUG_EXEC(std::cout << "I'm on Linux!" << std::endl);
-       memory = new uint8_t[mcap + PAGESIZE - 1];
-       assert(memory);
-       memdel = memory;
-       memory = (uint8_t*)(((size_t)memory + PAGESIZE - 1) & ~(PAGESIZE - 1));
-       mprotect(memory, mcapacity + PAGESIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+       	__DEBUG_EXEC(std::cout << "I'm on Linux!" << std::endl);
+       	memory = new uint8_t[2 * mcap + PAGESIZE - 1];
+       	assert(memory);
+       	memdel = memory;
+       	memory = (uint8_t*)(((size_t)memory + PAGESIZE - 1) & ~(PAGESIZE - 1));
+       	syscallmem = memory + mcap;
+       	if (!mprotect(memory, mcapacity + PAGESIZE, PROT_READ | PROT_WRITE | PROT_EXEC)) {
+       		fprintf(stderr, "MPROTECT MEMORY ERROR\n");
+       		assert(0);
+       	}
     #endif
 	mcapacity = mcap;
 }
@@ -104,19 +108,29 @@ int Jcompil::translate() const
 }
 int Jcompil::load()
 {
-	FILE* fin = nullptr;
-	if (!(fin = fopen("./jfiles/bitcode.fjit", "rb"))) {
+	FILE* fincode = nullptr;
+	FILE* finsyscall = nullptr;
+	if (!(fincode = fopen("./jfiles/bitcode.fjit", "rb"))) {
 		fprintf(stderr, "JIT: No input .fjit file\n");
 		return EXIT_FAILURE;
 	}
-	fread(memory, mcapacity, 1, fin);
-	fclose(fin);
+	if (!(finsyscall = fopen("./jfiles/syscalls.out", "rb"))) {
+		fprintf(stderr, "JIT: No input syscall file\n");
+		return EXIT_FAILURE;
+	}
+	fread(memory, mcapacity, 1, fincode);
+	fread(syscallmem, mcapacity, 1, finsyscall);
+	syscallmem += 0x80;
+	fclose(fincode);
+	fclose(finsyscall);
 	return EXIT_SUCCESS;
 }
 int Jcompil::run() const
 {
 	int (*run) (void);
+	void (*syscall) (void);
 	run = reinterpret_cast<int(*)()>(memory);
+	syscall = reinterpret_cast<void(*)()>(syscallmem);
 	asm(".intel_syntax noprefix\n\t"
 		"push rcx\n\t"
 		"push rdx\n\t"
@@ -127,10 +141,15 @@ int Jcompil::run() const
 		"push rsi\n\t"
 		"push r10\n\t"
 		"push r11\n\t"
+		"push r12\n\t"
+		"mov r12, %0\n\t"
 		".att_syntax noprefix\n\t"
+		:
+		: "r"(syscall)
 	);
 	int temp = run();
 	asm(".intel_syntax noprefix\n\t"
+		"pop r12\n\t"
 		"pop r11\n\t"
 		"pop r10\n\t"
 		"pop rsi\n\t"

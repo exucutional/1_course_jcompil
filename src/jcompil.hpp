@@ -6,6 +6,7 @@ class Jcompil
 	uint8_t* memory;
 	uint8_t* memdel;
 	size_t mcapacity;
+	uint8_t* syscallmem;
 public:
 	Jcompil(size_t mcap);
 	int assembl(FILE* fin) const;

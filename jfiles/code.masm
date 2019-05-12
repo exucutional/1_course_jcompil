@@ -8,7 +8,11 @@ popr rbx
 sub rcx 1 
 pushr rcx 
 pushq 0 
-jg 1 
+jg 1
+pushr rax
+movq rax 1
+syscall
+popr rax
 ret 
 
 _LABEL 6 

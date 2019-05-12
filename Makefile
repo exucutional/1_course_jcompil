@@ -11,9 +11,9 @@ VPATH = ./src
 OBJPATH = ./compile
 SRCC = main.cpp jcompil.cpp cpu/cpu_asm.cpp cpu/cpu_t.cpp
 HEAD = jcompil.hpp cpu/cpu_t.h
-SRCSASM = 
+SRCASM = 
 OBJC = $(SRCC:%.cpp=$(OBJPATH)/%.o)
-OBJASM = $(SRCASM:.S=.o)
+OBJASM = $(SRCASM:%.S=$(OBJPATH)/%.o)
 EXECUTABLE_LINUX = run.out
 EXECUTABLE_WINDOWS = run.exe
 
@@ -24,11 +24,11 @@ linux: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_LINUX)
 $(OBJPATH):
 	@mkdir $@
 
-$(EXECUTABLE_LINUX): $(OBJC)
+$(EXECUTABLE_LINUX): $(OBJC) $(OBJASM)
 	@echo "LINKING:"
 	$(LD) $(LDFLAGS) $(OBJC) -o  $@ $(SFML)
 
-$(EXECUTABLE_WINDOWS): $(OBJC)
+$(EXECUTABLE_WINDOWS): $(OBJC) $(OBJASM)
 	@echo "LINKING:"
 	$(LD) $(LDFLAGS) $(OBJC) -o  $@ -L$(LIBDIR) $(SFML)
 
@@ -36,5 +36,6 @@ $(OBJPATH)/%.o: %.cpp $(HEAD)
 	@echo "COMPILING:"
 	$(CC) $(CFLAGS) $< -o $@
 
-%.o: %.S
+$(OBJPATH)/%.o: %.S
+	@echo "COMPILING:"
 	$(ASM) $(AFLAGS) $< -o $@
