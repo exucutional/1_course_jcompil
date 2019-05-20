@@ -101,7 +101,7 @@ struct cpu_t
 	uint64_t trap;
 };
 
-int cpu_init(struct cpu_t *cpu, uint8_t **code_p);
+int cpu_init(struct cpu_t *cpu, uint8_t **code_p, size_t capacity);
 int cpu_dtor(struct cpu_t *cpu);
 int cpu_set_rip(struct cpu_t *cpu, void *code);
 int cpu_set_newrip(struct cpu_t *cpu, void *code);

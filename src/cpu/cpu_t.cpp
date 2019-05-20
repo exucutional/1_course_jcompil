@@ -41,24 +41,24 @@ do {																									\
 	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT_REG + REG_r11);											\
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE_EXT);												\
 	cpu_newrip_write_byte(cpu, X86_64_CMPR);															\
-	cpu_newrip_write_byte(cpu, X86_64_ASCM_REG + (REG_r11 - REG_r8) + ((REG_r10 - REG_r8) << 3));	\
+	cpu_newrip_write_byte(cpu, X86_64_ASCM_REG + (REG_r11 - REG_r8) + ((REG_r10 - REG_r8) << 3));		\
 } while (0)
 
 static const int LABEL_MAX = 32;
 static struct label_t lbl[LABEL_MAX] = {0};
 
-int cpu_init(struct cpu_t *cpu, uint8_t **code_p)
+int cpu_init(struct cpu_t *cpu, uint8_t **code_p, size_t capacity)
 {
 	//cpu->reg[REG_rax] = SYSCALL_EXIT;
 	cpu->trap = TRAP_NO_TRAP;
-	auto memory = static_cast<uint8_t*>(calloc(4096, sizeof(uint8_t)));
-	auto newmemory = static_cast<uint8_t*>(calloc(4096, sizeof(uint8_t)));
+	auto memory = static_cast<uint8_t*>(calloc(capacity, sizeof(uint8_t)));
+	auto newmemory = static_cast<uint8_t*>(calloc(2 * capacity, sizeof(uint8_t)));
 	memcpy(memory, *code_p, 512);
-	cpu_set_rsp(cpu, memory + 2048);
+	cpu_set_rsp(cpu, memory + capacity / 2);
 	cpu_set_rip(cpu, memory);
 	cpu_set_newrip(cpu, newmemory);
-	cpu_set_mem(cpu, memory, memory + 4096);
-	cpu_set_newmem(cpu, newmemory, newmemory + 4096);
+	cpu_set_mem(cpu, memory, memory + capacity);
+	cpu_set_newmem(cpu, newmemory, newmemory + 2 * capacity);
 	return 0;
 }
 int cpu_dtor(struct cpu_t *cpu)

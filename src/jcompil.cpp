@@ -87,7 +87,7 @@ int Jcompil::translate() const
 	fclose(fin);
 	//CPU HANDLING CODE
 	struct cpu_t cpu = {};
-	cpu_init(&cpu, &code);
+	cpu_init(&cpu, &code, mcapacity);
 	auto finalcode = static_cast<uint8_t*>(cpu.newrip);
 	//2x running. (1st collecting labels, 2st putting labels)
 	cpu_run(&cpu);
@@ -100,7 +100,7 @@ int Jcompil::translate() const
 		fprintf(stderr, "JIT: Couldn't create .fjit file\n");
 		return EXIT_FAILURE;
 	}
-	fwrite(finalcode, 4096, 1, fout);
+	fwrite(finalcode, mcapacity, 1, fout);
 	cpu_dtor(&cpu);
 	delete[] code;
 	fclose(fout);

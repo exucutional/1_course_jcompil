@@ -22,7 +22,7 @@ void testasm()
 		".att_syntax noprefix\n\t"
 	);
 }
-extern void _testasm();
+
 const size_t MEMORY_SIZE = 4096;
 //old 31 sec
 //new 2 sec
