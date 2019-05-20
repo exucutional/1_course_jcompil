@@ -127,6 +127,7 @@ int Jcompil::load()
 }
 int Jcompil::run() const
 {
+	printf("\n--------Running---------\n");
 	int (*run) (void);
 	void (*syscall) (void);
 	run = reinterpret_cast<int(*)()>(memory);

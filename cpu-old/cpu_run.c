@@ -38,6 +38,5 @@ int main(int argc, char* argv[])
 	printf("done:\n ncmds: %llu\n time: %lg\n freq: %lg MHz",
 		   tmp, (double) exec_time / CLOCKS_PER_SEC, ((double) tmp )
 		   / exec_time * CLOCKS_PER_SEC / 1000000);
-
 	return 0;
 }

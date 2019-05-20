@@ -29,19 +29,19 @@ static inline void cpu_cmd_##name(struct cpu_t*);
 #define MOVQ(reg, val) 									\
 do {													\
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);	\
-	cpu_newrip_write_byte(cpu, reg + 0xb8);				\
+	cpu_newrip_write_byte(cpu, X86_64_MOVQ_REG + reg);	\
 	cpu_newrip_write_qword(cpu, val);					\
 } while (0)
 
-#define JMP_PREPARE 									\
-do {													\
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);		\
-	cpu_newrip_write_byte(cpu, 0x5a);					\
-	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT);		\
-	cpu_newrip_write_byte(cpu, 0x5b);					\
-	cpu_newrip_write_byte(cpu, 0x4d);					\
-	cpu_newrip_write_byte(cpu, 0x39);					\
-	cpu_newrip_write_byte(cpu, 0xd3);					\
+#define JMP_PREPARE 																					\
+do {																									\
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);															\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT_REG + REG_r10);											\
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);															\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT_REG + REG_r11);											\
+	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE_EXT);												\
+	cpu_newrip_write_byte(cpu, X86_64_CMPR);															\
+	cpu_newrip_write_byte(cpu, X86_64_ASCM_REG + (REG_r11 - REG_r8) + ((REG_r10 - REG_r8) << 3));	\
 } while (0)
 
 static const int LABEL_MAX = 32;
@@ -184,9 +184,9 @@ int cpu_syscall(struct cpu_t *cpu)
 	case SYSCALL_EXIT:
 	case SYSCALL_OUTQ:
 	case SYSCALL_INPQ:
-		cpu_newrip_write_byte(cpu, 0x41);
-		cpu_newrip_write_byte(cpu, 0xff);
-		cpu_newrip_write_byte(cpu, 0xd4);
+		cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);
+		cpu_newrip_write_byte(cpu, 0xff);//syscall reg
+		cpu_newrip_write_byte(cpu, X86_64_SYSCALL_REG + REG_r12);
 		cpu->trap = TRAP_NO_TRAP;
 		break;
 	default:
@@ -282,7 +282,7 @@ static inline void cpu_cmd_pushm(struct cpu_t *cpu)
 static inline void cpu_cmd_pushmr(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_PUSHMR);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0x70);
+	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_PUSHMR_REG);
 	cpu_newrip_write_byte(cpu, cpu_rip_qword(cpu));
 }
 
@@ -305,42 +305,44 @@ static inline void cpu_cmd_add(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_ADD_SUB);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xc0);
+	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_ASCM_REG);
 	cpu_newrip_write_dword(cpu, cpu_rip_qword(cpu));
 }
 static inline void cpu_cmd_addr(struct cpu_t *cpu)
 {
+	uint8_t reg1 = cpu_rip_byte(cpu);
+	uint8_t reg2 = cpu_rip_byte(cpu);	 
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_ADDR);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu)
-						 + 8 * cpu_rip_byte(cpu) + 0xc0);
+	cpu_newrip_write_byte(cpu, reg1 + (reg2 << 3) + X86_64_ASCM_REG);
 }
 static inline void cpu_cmd_sub(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_ADD_SUB);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xe8);
+	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_SUB_REG);
 	cpu_newrip_write_dword(cpu, cpu_rip_qword(cpu));
 }
 static inline void cpu_cmd_subr(struct cpu_t *cpu)
 {
+	uint8_t reg1 = cpu_rip_byte(cpu);
+	uint8_t reg2 = cpu_rip_byte(cpu);	 
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_SUBR);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu)
-						 + 8 * cpu_rip_byte(cpu) + 0xc0);
+	cpu_newrip_write_byte(cpu, reg1 + (reg2 << 3) + X86_64_ASCM_REG);
 }
 static inline void cpu_cmd_mul(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_MUL_DIV);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xe0);
+	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_MUL_REG);
 }
 
 static inline void cpu_cmd_div(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_MUL_DIV);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xf0);
+	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_DIV_REG);
 }
 
 static inline void cpu_cmd_jmp(struct cpu_t *cpu)
@@ -375,10 +377,11 @@ static inline void cpu_cmd_ret(struct cpu_t *cpu)
 
 static inline void cpu_cmd_movrr(struct cpu_t *cpu)
 {
+	uint8_t reg1 = cpu_rip_byte(cpu);
+	uint8_t reg2 = cpu_rip_byte(cpu);	 
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_MOVRR);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + 0xc0 
-							+ cpu_rip_byte(cpu) * 8);
+	cpu_newrip_write_byte(cpu, reg1 + (reg2 << 3) + X86_64_ASCM_REG);
 }
 
 static inline void cpu_cmd_movq(struct cpu_t *cpu)
@@ -386,7 +389,7 @@ static inline void cpu_cmd_movq(struct cpu_t *cpu)
 	uint64_t temp1 = cpu_rip_byte(cpu);
 	uint64_t temp2 = cpu_rip_qword(cpu);
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
-	cpu_newrip_write_byte(cpu, temp1 + 0xb8);
+	cpu_newrip_write_byte(cpu, temp1 + X86_64_MOVQ_REG);
 	cpu_newrip_write_qword(cpu, temp2);
 	cpu->reg[temp1] = temp2;
 }
@@ -394,17 +397,19 @@ static inline void cpu_cmd_movmrr(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_MOVRR);
-	uint64_t tmp1 = cpu_rip_byte(cpu);
-	uint64_t tmp2 = cpu_rip_qword(cpu);
-	uint64_t tmp3 = cpu_rip_byte(cpu);
-	cpu_newrip_write_byte(cpu, tmp1 + 0x40 + tmp3 * 8);
-	cpu_newrip_write_byte(cpu, tmp2);
+	uint8_t reg1 = cpu_rip_byte(cpu);
+	uint64_t val = cpu_rip_qword(cpu);
+	uint8_t reg2 = cpu_rip_byte(cpu);
+	cpu_newrip_write_byte(cpu, X86_64_MOVMEM_REG + reg1 + (reg2 << 3));
+	cpu_newrip_write_byte(cpu, val);
 }
 static inline void cpu_cmd_movrmr(struct cpu_t *cpu)
 {
+	uint8_t reg1 = cpu_rip_byte(cpu);
+	uint8_t reg2 = cpu_rip_byte(cpu);
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_MOVRMR);
-	cpu_newrip_write_byte(cpu, 8 * cpu_rip_byte(cpu) + 0x40 + cpu_rip_byte(cpu));
+	cpu_newrip_write_byte(cpu, X86_64_MOVMEM_REG + (reg1 << 3) + reg2);
 	cpu_newrip_write_byte(cpu, cpu_rip_qword(cpu));
 }
 static inline void cpu_cmd_jl(struct cpu_t *cpu)
