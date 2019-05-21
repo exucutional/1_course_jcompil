@@ -8,7 +8,16 @@
 #include <ctype.h>
 #include <string.h>
 
-#define LABEL_MAX 16
+#define NDEBUG
+
+/// Debug macro
+#ifdef NDEBUG
+#define __DEBUG_EXEC(code) ;
+#else
+#define __DEBUG_EXEC(code) code
+#endif
+
+#define LABEL_MAX 256
 struct label_t lbl[LABEL_MAX];
 
 #define SKIP_SPACE	\
@@ -136,7 +145,7 @@ long code_asm (char *text, uint8_t **code_p)
 		ip_begin = *code_p;
 		while(*text != '\0')
 		{
-			//printf("%s\n", text);
+			__DEBUG_EXEC(printf("%s\n", text);)
 			SKIP_SPACE;
 			get_label(&text, code_p);
 			SKIP_SPACE;
@@ -147,7 +156,7 @@ long code_asm (char *text, uint8_t **code_p)
 			get_reg(&text, code_p);
 			SKIP_SPACE;
 			get_num(&text, code_p);
-			//printf("\n--------------------------------------\n");
+			__DEBUG_EXEC(printf("\n--------------------------------------\n");)
 		}
 		text = text_begin;
 		*code_p = ip_begin;

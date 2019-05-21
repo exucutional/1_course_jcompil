@@ -61,7 +61,7 @@ struct cpu_t
 	uint64_t trap;
 };
 
-int cpu_init(struct cpu_t *cpu, uint8_t **code_p);
+int cpu_init(struct cpu_t *cpu, uint8_t **code_p, size_t mem_cap);
 int cpu_set_rip(struct cpu_t *cpu, void *code);
 int cpu_set_rsp(struct cpu_t *cpu, void *rsp);
 int cpu_set_rsmp(struct cpu_t *cpu, void *rsp);

@@ -15,7 +15,7 @@
 
 /// Debug macro
 #ifdef NDEBUG
-#define __DEBUG_EXEC(code) ;
+#define aqqq ;
 #else
 #define __DEBUG_EXEC(code) code
 #endif
@@ -44,7 +44,15 @@ do {																									\
 	cpu_newrip_write_byte(cpu, X86_64_ASCM_REG + (REG_r11 - REG_r8) + ((REG_r10 - REG_r8) << 3));		\
 } while (0)
 
-static const int LABEL_MAX = 32;
+#define ARITH_PREPARE 																					\
+do {																									\
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);															\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT_REG + REG_r11);											\
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);															\
+	cpu_newrip_write_byte(cpu, X86_64_POPR_EXT_REG + REG_r10);											\
+} while (0)
+
+static const int LABEL_MAX = 256;
 static struct label_t lbl[LABEL_MAX] = {0};
 
 int cpu_init(struct cpu_t *cpu, uint8_t **code_p, size_t capacity)
@@ -298,15 +306,26 @@ static inline void cpu_cmd_popm(struct cpu_t *cpu)
 
 static inline void cpu_cmd_popmr(struct cpu_t *cpu)
 {
-	*(uint64_t*)(cpu->reg[cpu_rip_byte(cpu)] + cpu_rip_qword(cpu)) = cpu_pop(cpu);
+	cpu_newrip_write_byte(cpu, X86_64_POPMR);
+	cpu_newrip_write_byte(cpu, X86_64_POPMR_REG + cpu_rip_byte(cpu));
+	cpu_newrip_write_byte(cpu, cpu_rip_qword(cpu));
 }
-
+/*
 static inline void cpu_cmd_add(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
 	cpu_newrip_write_byte(cpu, X86_64_ADD_SUB);
 	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_ASCM_REG);
 	cpu_newrip_write_dword(cpu, cpu_rip_qword(cpu));
+}*/
+static inline void cpu_cmd_add(struct cpu_t *cpu)
+{
+	ARITH_PREPARE;
+	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE_EXT);
+	cpu_newrip_write_byte(cpu, X86_64_ADDR);
+	cpu_newrip_write_byte(cpu, (REG_r10 - REG_r8) + ((REG_r11 - REG_r8) << 3) + X86_64_ASCM_REG);
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);
+	cpu_newrip_write_byte(cpu, X86_64_PUSHR + (REG_r10 - REG_r8));
 }
 static inline void cpu_cmd_addr(struct cpu_t *cpu)
 {
@@ -318,10 +337,12 @@ static inline void cpu_cmd_addr(struct cpu_t *cpu)
 }
 static inline void cpu_cmd_sub(struct cpu_t *cpu)
 {
-	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
-	cpu_newrip_write_byte(cpu, X86_64_ADD_SUB);
-	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_SUB_REG);
-	cpu_newrip_write_dword(cpu, cpu_rip_qword(cpu));
+	ARITH_PREPARE;
+	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE_EXT);
+	cpu_newrip_write_byte(cpu, X86_64_SUBR);
+	cpu_newrip_write_byte(cpu, (REG_r10 - REG_r8) + ((REG_r11 - REG_r8) << 3) + X86_64_ASCM_REG);
+	cpu_newrip_write_byte(cpu, X86_64_EXT_CMD);
+	cpu_newrip_write_byte(cpu, X86_64_PUSHR + (REG_r10 - REG_r8));
 }
 static inline void cpu_cmd_subr(struct cpu_t *cpu)
 {
@@ -331,6 +352,10 @@ static inline void cpu_cmd_subr(struct cpu_t *cpu)
 	cpu_newrip_write_byte(cpu, X86_64_SUBR);
 	cpu_newrip_write_byte(cpu, reg1 + (reg2 << 3) + X86_64_ASCM_REG);
 }
+static inline void cpu_cmd_mul(struct cpu_t *cpu) {}
+static inline void cpu_cmd_div(struct cpu_t *cpu) {}
+//not working
+/*
 static inline void cpu_cmd_mul(struct cpu_t *cpu)
 {
 	cpu_newrip_write_byte(cpu, X86_64_OPERAND_SIZE);
@@ -344,7 +369,7 @@ static inline void cpu_cmd_div(struct cpu_t *cpu)
 	cpu_newrip_write_byte(cpu, X86_64_MUL_DIV);
 	cpu_newrip_write_byte(cpu, cpu_rip_byte(cpu) + X86_64_DIV_REG);
 }
-
+*/
 static inline void cpu_cmd_jmp(struct cpu_t *cpu)
 {
 	JMP_PREPARE;

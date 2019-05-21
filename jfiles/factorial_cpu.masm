@@ -1,54 +1,94 @@
-pushq 100000000
-popr rcx
-
-:100
-
-pushq 10
-call 6
-popr rbx
-
-pushr rcx
+call 1
+pushr rbx
 pushq 1
-sub
-popr rcx
-
-pushr rcx
-pushq 0
-jg 100
-
-
+popr rax
+syscall
 pushq 0
 popr rax
 syscall
-
-
-:6
-
-pushr rbp
-movrr rbp rsp
-
-pushmr rbp 16
-pushq 1
-jg 3
-
-pushq 1
-popr rax
-
-popr rbp
-ret
-
-:3
-
-pushmr rbp 16
-pushq 1
-sub
-call 6
-popr rbx
-
-pushr rax
-pushmr rbp 16
-mul
-popr rax
-
-popr rbp
-ret
+_LABEL 0
+ pushr rbp
+ movrr rbp rsp
+ pushr rsp
+ pushq 32
+ sub
+ popr rsp
+ pushmr rbp 16
+ popmr rbp -8
+ pushmr rbp 24
+ popmr rbp -16
+ pushmr rbp -8
+ pushq 0
+ jne 100
+ pushmr rbp -16
+ pushq 1
+ add
+ popr rbx
+ pushr rsp
+ pushq 32
+ add
+ popr rsp
+ popr rbp
+ ret
+ _LABEL 100
+ pushmr rbp -16
+ pushq 0
+ jne 101
+ pushq 1
+ pushmr rbp -8
+ pushq 1
+ sub
+ call 0
+ popr rdi
+ popr rdi
+ pushr rbx
+ popr rbx
+ pushr rsp
+ pushq 32
+ add
+ popr rsp
+ popr rbp
+ ret
+ _LABEL 101
+ pushmr rbp -16
+ pushq 1
+ sub
+ pushmr rbp -8
+ call 0
+ popr rdi
+ popr rdi
+ pushr rbx
+ pushmr rbp -8
+ pushq 1
+ sub
+ call 0
+ popr rdi
+ popr rdi
+ pushr rbx
+ popr rbx
+ pushr rsp
+ pushq 32
+ add
+ popr rsp
+ popr rbp
+ ret
+_LABEL 1
+ pushr rbp
+ movrr rbp rsp
+ pushr rsp
+ pushq 32
+ sub
+ popr rsp
+ pushq 11
+ pushq 3
+ call 0
+ popr rdi
+ popr rdi
+ pushr rbx
+ popr rbx
+ pushr rsp
+ pushq 32
+ add
+ popr rsp
+ popr rbp
+ ret

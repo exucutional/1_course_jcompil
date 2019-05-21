@@ -39,3 +39,4 @@ DEF_CMD(jne, 4) 	//
 DEF_CMD(exit, 1) 	//
 DEF_CMD(div, 1) 	//
 DEF_CMD(jmp, 4) 	//
+DEF_CMD(procstop, 1)

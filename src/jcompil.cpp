@@ -6,6 +6,8 @@
 #endif
 #include <iostream>
 #include <cassert>
+#include <string.h>
+#include <errno.h>
 #include "jcompil.hpp"
 #include "cpu/cpu_t.h"
 #ifdef NDEBUG
@@ -30,7 +32,7 @@ Jcompil::Jcompil(size_t mcap)
        	memory = (uint8_t*)(((size_t)memory + PAGESIZE - 1) & ~(PAGESIZE - 1));
        	syscallmem = memory + mcap;
        	if (!mprotect(memory, mcapacity + PAGESIZE, PROT_READ | PROT_WRITE | PROT_EXEC)) {
-       		fprintf(stderr, "MPROTECT MEMORY ERROR\n");
+       		fprintf(stderr, "MPROTECT MEMORY ERROR: %s\n", strerror(errno));
        		assert(0);
        	}
     #endif
@@ -86,7 +88,7 @@ int Jcompil::translate() const
 	fread(code, size, 1, fin);
 	fclose(fin);
 	//CPU HANDLING CODE
-	struct cpu_t cpu = {};
+	struct cpu_t cpu = {0};
 	cpu_init(&cpu, &code, mcapacity);
 	auto finalcode = static_cast<uint8_t*>(cpu.newrip);
 	//2x running. (1st collecting labels, 2st putting labels)

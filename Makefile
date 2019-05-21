@@ -14,15 +14,21 @@ HEAD = jcompil.hpp cpu/cpu_t.h
 SRCASM = 
 OBJC = $(SRCC:%.cpp=$(OBJPATH)/%.o)
 OBJASM = $(SRCASM:%.S=$(OBJPATH)/%.o)
-EXECUTABLE_LINUX = run.out
+EXECUTABLE_LINUX = jitrun.out 
 EXECUTABLE_WINDOWS = run.exe
-
+SUBDIRS = proglang cpu-old
+MAKE = make
+MAKEFLAG = linux
 windows: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_WINDOWS)
 
-linux: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_LINUX)
+linux: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_LINUX) $(SUBDIRS)
+.PHONY: all $(SUBDIRS)
 
 $(OBJPATH):
 	@mkdir $@
+
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKEFLAG) 
 
 $(EXECUTABLE_LINUX): $(OBJC) $(OBJASM)
 	@echo "LINKING:"

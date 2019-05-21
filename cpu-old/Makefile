@@ -14,7 +14,7 @@ HEAD = cpu_t.h
 SRCSASM = 
 OBJC = $(SRCC:%.c=$(OBJPATH)/%.o)
 OBJASM = $(SRCASM:.S=.o)
-EXECUTABLE_LINUX = run.out
+EXECUTABLE_LINUX = run.out ../cpurun.out
 EXECUTABLE_WINDOWS = run.exe
 
 windows: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_WINDOWS)
