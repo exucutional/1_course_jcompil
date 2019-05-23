@@ -53,7 +53,7 @@ out 10 + 10 * func(1)|
 
 ### Examples
 
-Aсkermann function calculation programm
+Aсkermann function calculation program
 ```
 simple akk(simple m, simple n):
 		? (m == 0):
