@@ -3,8 +3,9 @@ pushr rbx
 pushq 1
 popr rax
 syscall
-popr rdi
-ret
+pushq 0
+popr rax
+syscall
 _LABEL 0
  pushr rbp
  movrr rbp rsp

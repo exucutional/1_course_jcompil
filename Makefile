@@ -9,6 +9,7 @@ LDFLAGS = -g -no-pie
 SFML = -lsfml-graphics -lsfml-window -lsfml-system 
 VPATH = ./src
 OBJPATH = ./compile
+DIRPATH = ./compile ./compile/cpu
 SRCC = main.cpp jcompil.cpp cpu/cpu_asm.cpp cpu/cpu_t.cpp
 HEAD = jcompil.hpp cpu/cpu_t.h
 SRCASM = 
@@ -21,11 +22,11 @@ MAKE = make
 MAKEFLAG = linux
 windows: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_WINDOWS)
 
-linux: $(OBJPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_LINUX) $(SUBDIRS)
+linux: $(DIRPATH) $(SRCC) $(SRCASM) $(EXECUTABLE_LINUX) $(SUBDIRS)
 .PHONY: all $(SUBDIRS)
 
-$(OBJPATH):
-	@mkdir $@
+$(DIRPATH):
+	@mkdir -p $@
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKEFLAG) 
