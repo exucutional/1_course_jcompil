@@ -1,0 +1,3 @@
+[submodule "proglang"]
+	path = proglang
+	url = https://github.com/exucutional/proglang.git
