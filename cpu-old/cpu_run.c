@@ -9,7 +9,7 @@
 #include <assert.h>
 
 const size_t MEMORY_SIZE = 4096;
-const size_t CPU_MEMORY_SIZE = 1024 * 4096;
+const size_t CPU_MEMORY_SIZE =  1024 * 4096;
 
 int main(int argc, char* argv[])
 {

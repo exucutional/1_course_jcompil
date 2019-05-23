@@ -3,6 +3,7 @@ pushr rbx
 pushq 1
 popr rax
 syscall
+popr rdi
 ret
 _LABEL 0
  pushr rbp
