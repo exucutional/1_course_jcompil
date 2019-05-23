@@ -34,13 +34,12 @@ Common integer variable
 ```
 simple x = 10|
 ```
-Function
+Function (!!! Main function nessecary !!!)
 ```
 simple func(simple arg1, ...):
 	<code>
 @
 ```
-!!! Main function nessecary !!!
 If block
 ```
 ? (<condition>):
