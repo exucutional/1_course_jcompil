@@ -43,7 +43,7 @@ simple func(simple arg1, ...):
 If block
 ```
 ? (<condition>):
-
+	<code>
 @|
 ```
 Return value
