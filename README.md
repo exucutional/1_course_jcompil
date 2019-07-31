@@ -7,7 +7,7 @@ Only linux version.
 ### Installing
 
 ```
-1) git clone https://github.com/exucutional/jcompil.git
+1) git clone --recurse-submodule https://github.com/exucutional/jcompil.git
 2) make linux
 ```
 
